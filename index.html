@@ -78,13 +78,21 @@ nav {
 <body>
   <nav>
     <ul class="menu">
+          {% if not benvenuto %}
       <li><a href="#">Login</a></li>
-      <li><a href="#">Registrati</a></li>
-      <li><a href="#">Inserisci osservazione</a></li>
+      <li><a href="/registrazione">Registrati</a></li>
+            {% endif %}
+       {% if benvenuto %}
 
-      <li><a href="#">Admin</a></li>
+      <li><a href="#">Inserisci osservazione</a></li>
+    {% endif %}
+
+      <!--<li><a href="#">Admin</a></li>-->
 
     </ul>
+       {% if benvenuto %}
+        <h1>Benvenuto {{ benvenuto }}</h1>
+    {% endif %}
     <button class="search-button">Cerca</button>
   </nav>
 
@@ -98,22 +106,33 @@ nav {
 
 
            {% for i in range(0, 8, 4) %}
+               <a href="./viewSegnalazione?id={{ lista[i]._id }}">
                <div class="grid-item">
                    <img src="{{ lista[i].image_url }}" alt="Immagine 1">
                     <p>{{ lista[i].scientific_name }} - {{ lista[i].data_osservazione }}</p>
                </div>
+               </a>
+                              <a href="./viewSegnalazione?id={{ lista[1+i]._id }}">
+
                <div class="grid-item">
                    <img src="{{ lista[1+i].image_url }}" alt="Immagine 1">
                    <p>{{ lista[1+i].scientific_name }} - {{ lista[1+i].data_osservazione }}</p>
                </div>
+                              </a>
+                              <a href="./viewSegnalazione?id={{ lista[2+i]._id }}">
+
                <div class="grid-item">
                    <img src="{{ lista[2+i].image_url }}" alt="Immagine 1">
                    <p>{{ lista[2+i].scientific_name }} - {{ lista[2+i].data_osservazione }}</p>
                </div>
+                              </a>
+                              <a href="./viewSegnalazione?id={{ lista[3+i]._id }}">
+
                <div class="grid-item">
                    <img src="{{ lista[3+i].image_url }}" alt="Immagine 1">
                     <p>{{ lista[3+i].scientific_name }} - {{ lista[3+i].data_osservazione }}</p>
                </div>
+                              </a>
            {% endfor %}
     </div>
           {% endfor %}
