@@ -1,5 +1,7 @@
 import json
+import os
 import random
+from sched import scheduler
 
 from bson import ObjectId
 from flask import Flask, render_template, request, redirect, url_for
@@ -11,11 +13,24 @@ from pymongo.errors import DuplicateKeyError
 
 app = Flask(__name__)
 
-
 # Configurazione MongoDB
 # client = MongoClient('mongodb://localhost:27017/')
 # db = client['mydatabase']
 # collection = db['mycollection']
+UPLOAD_FOLDER = 'static'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+@app.route('/insertsegnalazione', methods=['post'])
+def insert_segnalazione():
+    print("insertsegn")
+    file = request.files['image']
+
+    # Salva il file nell'apposita cartella
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+    image_url = f"{request.host_url}{UPLOAD_FOLDER}/{file.filename}"
+    return render_template('index.html', documents=getRandomDocuments())
+
 
 @app.route('/insertuser', methods=['POST'])
 def insert_user():
@@ -44,14 +59,30 @@ def getRandomDocuments():
     db_name = "mongoDBproject"
     db = client[db_name]
     # Ottenere 30 documenti casuali dalla collezione
-    pipeline = [
-        {'$sample': {'size': 8}}
-    ]
+    #    pipeline = [
+    #        {'$sample': {'size': 8}}
+    #    ]
 
+    #    random_documents = {}
+    #    for collection in getCollections(db):
+    #        print(collection)
+    #        random_documents[collection] = list(db.get_collection(collection).aggregate(pipeline))
     random_documents = {}
     for collection in getCollections(db):
-        print(collection)
-        random_documents[collection] = list(db.get_collection(collection).aggregate(pipeline))
+        random_documents[collection] = list(db.get_collection(collection).aggregate([
+            {
+                '$match': {
+                    '$expr': {
+                        '$gt': [{'$size': {'$objectToArray': '$$ROOT'}}, 10]
+                    }
+                }
+            },
+            {
+                '$sample': {
+                    'size': 8
+                }
+            }
+        ]))
     return random_documents
 
 
@@ -90,63 +121,11 @@ def crea_db():
     utenti_collection.create_index("username", unique=True)
     utenti_collection.insert_one({"username": "admin", "password": "admin", "isAdmin": True})
 
-    # creo collezioni stato (solo nome), regione (solo nome), città (nome + latitudine longitudine facoltativi)
-    schema_stati = {
-        "validator": {
-            "$jsonSchema": {
-                "bsonType": "object",
-                "required": ["nome"],  # Campi obbligatori
-                "properties": {
-                    "nome": {
-                        "bsonType": "string",  # Tipo di dato per campo1
-                    }
-                }
-            }
-        }
-    }
-    stati_collection = db.create_collection("stati", **schema_stati)
-    stati_collection.create_index("nome", unique=True)
-
-    schema_regioni = {
-        "validator": {
-            "$jsonSchema": {
-                "bsonType": "object",
-                "required": ["nome", "stato"],  # Campi obbligatori
-                "properties": {
-                    "nome": {
-                        "bsonType": "string"  # Tipo di dato per campo1
-                    },
-                    "stato": {
-                        "bsonType": "string"
-                    }
-                }
-            }
-        }
-    }
-    regioni_collection = db.create_collection("regioni", **schema_regioni)
-
-    schema_citta = {
-        "validator": {
-            "$jsonSchema": {
-                "bsonType": "object",
-                "required": ["nome", "regione"],  # Campi obbligatori
-                "properties": {
-                    "nome": {
-                        "bsonType": "string"  # Tipo di dato per campo1
-                    },
-                    "regione": {
-                        "bsonType": "string"
-                    }
-                }
-            }
-        }
-    }
-    citta_collection = db.create_collection("citta", **schema_citta)
-
     # pasing db inaturalist inserimento dati
     with open('../../Databaseinaturalis/inaturalistOsservationsJson2023_06_14_15_37_32.json') as naturalistDB:
         dataInaturalist = json.load(naturalistDB)
         for obj in dataInaturalist:
+
             # non inserisco oggetti sbagliati che hanno id=id, common_name=common_name...
             if obj["id"] == "id":
                 continue
@@ -157,8 +136,12 @@ def crea_db():
                     "validator": {
                         "$jsonSchema": {
                             "bsonType": "object",
-                            "required": ["data_osservazione", "image_url", "id_citta"],  # Campi obbligatori
+                            "required": ["id_utente","data_osservazione", "image_url", "latitudine", "longitudine"],
+                            # Campi obbligatori
                             "properties": {
+                                "id_utente":{
+                                    "bsonType": "objectId"
+                                },
                                 "data_osservazione": {
                                     "bsonType": "string",  # Tipo di dato per campo1
                                     "pattern": "^\d{2}/\d{2}/\d{4}$"
@@ -171,6 +154,12 @@ def crea_db():
                                     "bsonType": "objectId",
                                     "pattern": "^[0-9a-fA-F]{24}$"
                                     # Pattern per validare un ObjectId a 24 caratteri esadecimali
+                                },
+                                "latitudine": {
+                                    "bsonType": "double"
+                                },
+                                "longitudine": {
+                                    "bsonType": "double"
                                 }
                             }
                         }
@@ -181,15 +170,18 @@ def crea_db():
             # se l'utente non è presente lo inserisco
             # if db.get_collection("utenti").find_one({"username": obj["user_name"]}) is None:
             try:
-                db.get_collection("utenti").insert_one({"username": obj["user_name"], "password": "utente"})
+                inserted_id= db.get_collection("utenti").insert_one({"username": obj["user_name"], "password": "utente"}).inserted_id
+                print(inserted_id)
+                print(inserted_id["_id"])
             except:
+                inserted_id = db.get_collection("utenti").find_one({"username":  obj["user_name"]})
                 print(obj["user_name"] + " già presente")
-
-            osservazione = {"data_osservazione": datetime.strptime(obj['observed_on'], "%Y-%m-%d").strftime("%d/%m/%Y"),
-                         "image_url": obj['image_url'],
-                         "id_citta": insert_stato_regione_citta(db, obj["place_guess"],
-                                                                obj["latitude"], obj["longitude"]),
-                         "scientific_name": obj["scientific_name"]}
+                print(inserted_id)
+                print(inserted_id["_id"])
+            osservazione = {"id_utente":inserted_id["_id"],"data_osservazione": datetime.strptime(obj['observed_on'], "%Y-%m-%d").strftime("%d/%m/%Y"),
+                            "image_url": obj['image_url'], "latitudine": float(obj["latitude"]),
+                            "longitudine": float(obj["longitude"]),
+                            "scientific_name": obj["scientific_name"]}
 
             db.get_collection(obj["iconic_taxon_name"]).insert_one(osservazione)
 
@@ -197,13 +189,18 @@ def crea_db():
         dataInsects = json.load(dbinsect)
         for obj in dataInsects:
             for collection in getCollections(db):
-                db.get_collection(collection).update_many({"scientific_name": obj["scientific_name"]},
+                scientific_name = re.sub(r'Â|\xa0', ' ', obj["scientific_name"]).strip().replace("  ", " ")
+                db.get_collection(collection).update_many({"scientific_name": scientific_name},
                                                           {"$set": {"nome_comune": obj["common-name"],
                                                                     "dimensioni": obj["Size (Adult; Length)"]}})
-                db.get_collection(collection).update_many({"scientific_name": obj["scientific_name"]},{"$set":creaColori(obj["Colors"])})
+                db.get_collection(collection).update_many({"scientific_name": scientific_name},
+                                                          {"$set": creaColori(obj["Colors"])})
 
                 try:
-                    db.get_collection(collection).update_many({"scientific_name": obj["scientific_name"]},{"$set":attributi(obj["Descriptors"])})
+                    print({"scientific_name": scientific_name}, {"$set": attributi(obj["Descriptors"])})
+                    if db.get_collection(collection).update_many({"scientific_name": scientific_name}, {
+                        "$set": attributi(obj["Descriptors"])}).modified_count > 0:
+                        print("aggiornato" + scientific_name)
                 except KeyError:
                     print("descriptors key error")
     client.close()
@@ -820,31 +817,60 @@ def attributi(stringa):
         for parola in parole:
             parola = parola.strip()
             if parola in dizionario:
-                risul.append({dizionario[parola]:parola})
+                risul.append({dizionario[parola]: parola})
 
         return risul
 
     risultati = cerca_in_dizionario(stringa, dizionario)
 
     oggetto_json = json.dumps(risultati)
-    print(unisci_oggetti(rimuovi_chiavi_duplicate(oggetto_json)))
-    return json.loads(unisci_oggetti(rimuovi_chiavi_duplicate(oggetto_json)))
+    print(unisci_oggetti(rimuovi_chiavi_duplicate(oggetto_json)).replace("\\u00e0", "a"))
+    return json.loads(unisci_oggetti(rimuovi_chiavi_duplicate(oggetto_json)).replace("\\u00e0", "a"))
+
 
 @app.route("/viewSegnalazione", methods=["GET"])
 def visualizza_documento():
     # Ottieni il valore del parametro "id" dalla richiesta GET
     documento_id = request.args.get("id")
     client = MongoClient('mongodb://localhost:27017/')
-    db = client['mydatabase']
+    db = client['mongoDBproject']
     documento = None
     for collezione in getCollections(db):
+        try:
+
+             documento = db.get_collection(collezione).aggregate([
+                 {
+                     '$match': {
+                         '_id': ObjectId(documento_id)
+                     }
+                 },
+                 {
+                     '$lookup': {
+                         'from': 'utenti',
+                         'localField': 'id_utente',
+                         'foreignField': '_id',
+                         'as': 'utente'
+                     }
+                 },
+                 {
+                     '$project': {
+                         '_id': 0,
+                         'utente.password':0,
+                         'utente._id': 0
+                     }
+                 }
+            ]).next()
+
+        except StopIteration:
+            continue
+
         # Cerca il documento corrispondente nell'archivio dei dati
-        documento = db.get_collection(collezione).find_one({"_id": ObjectId(documento_id)})
+        # documento = db.get_collection(collezione).find_one({"_id": ObjectId(documento_id)})
+        print(documento)
         if documento is not None:
             return render_template("segnalazione.html", documento=documento)
 
-
-    return render_template("errore.html", messaggio="nessun doc con id:"+documento_id)
+    return render_template("errore.html", messaggio="nessun doc con id:" + documento_id)
     # Passa il documento alla pagina HTML come contesto
 
 
@@ -867,6 +893,7 @@ def unisci_oggetti(json_array):
 
     return json_risultante
 
+
 def rimuovi_chiavi_duplicate(json_data):
     # Carica la stringa JSON in un oggetto Python
     data = json.loads(json_data)
@@ -878,6 +905,7 @@ def rimuovi_chiavi_duplicate(json_data):
     json_risultante = json.dumps(data)
 
     return json_risultante
+
 
 def rimuovi_duplicate(obj):
     # Verifica se l'oggetto è un dizionario
@@ -891,7 +919,6 @@ def rimuovi_duplicate(obj):
         obj = [rimuovi_duplicate(elem) for elem in obj]
 
     return obj
-
 
 
 def creaColori(color_string):
@@ -918,62 +945,6 @@ def creaColori(color_string):
 
     print(json_data)
     return json.loads(json_data)
-
-
-def insert_stato_regione_citta(db, indirizzo, latitude, longitude):
-    print(indirizzo)
-
-    # Funzione per controllare se un elemento è presente in una collezione
-    def elemento_presente(collezione, campo, valore):
-        return collezione.find_one({campo: valore}) is not None
-
-    # Funzione per inserire un nuovo elemento in una collezione
-    def inserisci_elemento(collezione, elemento):
-        collezione.insert_one(elemento)
-
-    collezione_stati = db['stati']
-    collezione_regioni = db['regioni']
-    collezione_citta = db['citta']
-
-    # Separazione degli elementi dell'indirizzo
-    elementi = indirizzo.split(', ')
-    citta, regione, stato = "", "", ""
-    if len(elementi) >= 3:
-        citta = elementi[-1]
-        regione = elementi[-2]
-        stato = elementi[-3]
-    if len(elementi) == 2:
-        regione = elementi[-1]
-        stato = elementi[-2]
-    else:
-        stato = elementi[-1]
-
-    # Verifica presenza dello stato, se non c'è stato allora non c'è ne regione ne citta
-    # lo stato c'è sempre nel db
-    if not elemento_presente(collezione_stati, 'nome', stato):
-        inserisci_elemento(collezione_stati, {'nome': stato})
-        if regione != "":
-            inserisci_elemento(collezione_regioni, {'nome': regione, 'stato': stato})
-            inserisci_elemento(collezione_citta,
-                               {'nome': citta, 'regione': regione, 'latitudine': latitude, 'longitudine': longitude}) \
-                if latitude != "" and longitude != "" else inserisci_elemento(collezione_citta,
-                                                                              {'nome': citta, 'regione': regione})
-    elif regione != "" and not elemento_presente(collezione_regioni, 'nome', regione):
-        inserisci_elemento(collezione_regioni, {'nome': regione, 'stato': stato})
-        if citta != "":
-            inserisci_elemento(collezione_citta,
-                               {'nome': citta, 'regione': regione, 'latitudine': latitude, 'longitudine': longitude}) \
-                if latitude != "" and longitude != "" else inserisci_elemento(collezione_citta,
-                                                                              {'nome': citta, 'regione': regione})
-    elif not elemento_presente(collezione_citta, 'nome', citta):
-        inserisci_elemento(collezione_citta,
-                           {'nome': citta, 'regione': regione, 'latitudine': latitude, 'longitudine': longitude}) \
-            if latitude != "" and longitude != "" else inserisci_elemento(collezione_citta,
-                                                                          {'nome': citta, 'regione': regione})
-
-    return collezione_citta.find_one({"nome": citta})["_id"]
-    # Chiusura della connessione a MongoDB
-    client.close()
 
 
 @app.route('/registrazione')
@@ -1003,6 +974,65 @@ def inserisci_utente():
         return render_template("registrazione.html", giaPresente=username)
 
     return render_template("index.html", documents=getRandomDocuments(), benvenuto=username)
+
+@app.route('/cercaSegnalazioni', methods=['POST'])
+def cercaSegnalazioni():
+    # Funzione per creare una query MongoDB in base ai parametri
+    def build_query(inizio_data, fine_data, latitudine, longitudine, nome_scientifico, altre_caratt, username_utente):
+        query = {}
+
+        if inizio_data:
+            query['inizioData'] = {'$gte': inizio_data}
+
+        if fine_data:
+            query['fineData'] = {'$lte': fine_data}
+
+        if latitudine:
+            lat = float(latitudine)
+            query['latitudine'] = {'$gte': lat - 10, '$lte': lat + 10}
+
+        if longitudine:
+            lon = float(longitudine)
+            query['longitudine'] = {'$gte': lon - 10, '$lte': lon + 10}
+
+        if nome_scientifico:
+            query['nomeScientifico'] = {'$regex': re.compile(re.escape(nome_scientifico), re.IGNORECASE)}
+
+        if altre_caratt:
+            altre_caratteristiche = altre_caratt.split(',')
+            query['$text'] = {'$search': altre_caratteristiche}
+
+        if username_utente:
+            query['utente.username'] = username_utente
+
+        return query
+
+    # Eseguire la query nel database
+    def execute_query(query):
+        client = MongoClient("mongodb://localhost:27017/")
+        database = client['mongoDBproject']
+
+        rst = {}
+        for collection in getCollections(database):
+            rst[collection] = list(database[collection].find(query))
+
+        return rst
+
+
+    inizio_data = request.form.get('inizioData')
+    fine_data = request.form.get('fineData')
+    latitudine = request.form.get('latitudine')
+    longitudine = request.form.get('longitudine')
+    nome_scientifico = request.form.get('nomeScientifico')
+    altre_caratt = request.form.get('altreCaratt')
+    username_utente = request.form.get('usernameUtente')
+
+    query = build_query(inizio_data, fine_data, latitudine, longitudine, nome_scientifico, altre_caratt,
+                        username_utente)
+    print(query)
+    result = execute_query(query)
+    print(result)
+    return result
 
 
 if __name__ == '__main__':

@@ -20,7 +20,7 @@
         .image {
             width: 200px;
             height: 200px;
-            background-image: url('{{ documento.image_url }}.jpg');
+            background-image: url('{{ documento.image_url }}');
             background-size: cover;
             background-position: center;
         }
@@ -49,9 +49,22 @@
             <div class="image"></div>
             <div class="list">
                 <ul>
-                       {% for key, value in documento.items() %}
-                        <li><strong>{{ key }}:</strong> {{ value }}</li>
+                    {% for campo, valore in documento.items() %}
+            {% if campo == 'citta' %}
+                <li><strong>{{ campo }}:</strong></li>
+                <ul>
+                    {% for city in valore %}
+                        {% for city_campo, city_valore in city.items() %}
+                            <li>{{ city_campo }}: {{ city_valore }}</li>
                         {% endfor %}
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <li><strong>{{ campo }}:</strong> {{ valore }}</li>
+            {% endif %}
+        {% endfor %}
+
+
                 </ul>
             </div>
         </div>

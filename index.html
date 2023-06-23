@@ -5,6 +5,88 @@
   <link rel="stylesheet" type="text/css" href="style.css">
   <style>
 
+
+
+  #popupCerca form {
+            width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #popupCerca label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #popupCerca input[type="text"],
+        #popupCerca input[type="date"],
+        #popupCerca input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #popupCerca input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+
+ /* Stile per il popup */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+    }
+
+    /* Stile per il pulsante */
+    .btn {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* Stile per il form */
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="file"] {
+      width: 100%;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    .form-group .add-field-button {
+      margin-top: 10px;
+    }
+
       img{width:100%;}
       img{height: 400px !important;
     max-height: 100% !important;}
@@ -42,6 +124,8 @@ nav {
 
 /* Stile della griglia */
 .grid-container {
+    margin-right: 110px;
+    margin-left: 110px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-gap: 20px;
@@ -93,7 +177,11 @@ nav {
        {% if benvenuto %}
         <h1>Benvenuto {{ benvenuto }}</h1>
     {% endif %}
-    <button class="search-button">Cerca</button>
+    <button class="search-button btn" onclick="openPopupCerca()">Cerca</button>
+      <button class="search-button btn" onclick="openPopup()">Inserisci segnalazione</button>
+
+<!--   <button class="btn" onclick="openPopup()">Apri Popup</button>-->
+
   </nav>
 
   <main>
@@ -140,5 +228,118 @@ nav {
 
 
   </main>
+
+<div id="popupCerca" class="popup">
+    <h2>Cerca una segnalazione</h2>
+    <form id="ricercaForm" action="cercaSegnalazioni" method="post">
+        <label for="inizioData">Inizio Periodo Data Osservazione:</label>
+        <input type="date" id="inizioData" name="inizioData">
+
+        <label for="fineData">Fine Periodo Data Osservazione:</label>
+        <input type="date" id="fineData" name="fineData">
+
+        <label for="latitudine">Latitudine:</label>
+        <input type="number" id="latitudine" name="latitudine">
+
+        <label for="longitudine">Longitudine:</label>
+        <input type="number" id="longitudine" name="longitudine">
+
+        <label for="nomeScientifico">Nome Scientifico:</label>
+        <input type="text" id="nomeScientifico" name="nomeScientifico">
+
+        <label for="altreCaratt">Altre caratteristiche:</label>
+        <input type="text" id="altreCaratt" name="altreCaratt" placeholder="flying, harmful, spots, orange...">
+
+        <label for="usernameUtente">Username utente:</label>
+        <input type="text" id="usernameUtente" name="usernameUtente">
+
+        <input type="submit" value="Cerca">
+        <button onclick="closePopupCerca()">Chiudi</button>
+
+    </form>
+  </div>
+
+
+<div id="popup" class="popup">
+    <h2>Aggiungi una nuova segnalazione</h2>
+    <form id="speciesForm" action="./insertsegnalazione" method="post"  enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="image">Immagine:</label>
+        <input type="file" id="image" name="image">
+      </div>
+          <div class="form-group">
+        <label for="category">Categoria:</label>
+        <select id="category" name="category">
+          <option value="Arachnida">Arachnida</option>
+          <option value="Insecta">Insecta</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="scientificName">Nome scientifico:</label>
+        <input type="text" id="scientificName" name="scientificName">
+      </div>
+      <div class="form-group">
+        <label for="commonName">Nome comune:</label>
+        <input type="text" id="commonName" name="commonName">
+      </div>
+      <div id="customFieldsContainer">
+        <!-- Qui vengono aggiunte le coppie chiave-valore personalizzate -->
+      </div>
+      <button class="add-field-button" type="button" onclick="addCustomField()">Aggiungi nuovo campo</button>
+      <button type="submit">Salva</button>
+      <button onclick="closePopup()">Chiudi</button>
+    </form>
+  </div>
+
+
+     <script>
+
+           function openPopupCerca() {
+      var popup = document.getElementById("popupCerca");
+      popup.style.display = "block";
+    }
+
+    function closePopupCerca() {
+      var popup = document.getElementById("popupCerca");
+      popup.style.display = "none";
+    }
+    function openPopup() {
+      var popup = document.getElementById("popup");
+      popup.style.display = "block";
+    }
+
+    function closePopup() {
+      var popup = document.getElementById("popup");
+      popup.style.display = "none";
+    }
+
+    function addCustomField() {
+      var customFieldsContainer = document.getElementById("customFieldsContainer");
+
+      var newField = document.createElement("div");
+      newField.classList.add("form-group");
+
+      var newLabel = document.createElement("label");
+      newLabel.textContent = "Campo:";
+      var newInput = document.createElement("input");
+      newInput.type = "text";
+      newInput.placeholder = "nomeCampo:valoreCampo"
+      newInput.name = "customFieldKey[]";
+
+      var removeButton = document.createElement("button");
+      removeButton.textContent = "Rimuovi";
+      removeButton.type = "button";
+      removeButton.onclick = function () {
+        customFieldsContainer.removeChild(newField);
+      };
+
+      newField.appendChild(newLabel);
+      newField.appendChild(newInput);
+      newField.appendChild(removeButton);
+
+      customFieldsContainer.appendChild(newField);
+    }
+  </script>
+
 </body>
 </html>
