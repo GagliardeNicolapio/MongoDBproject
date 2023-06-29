@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Interfaccia Responsive</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <style>
+
+
+
+  #popupCerca form {
+            width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #popupCerca label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #popupCerca input[type="text"],
+        #popupCerca input[type="date"],
+        #popupCerca input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #popupCerca input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+
+ /* Stile per il popup */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+    }
+
+    /* Stile per il pulsante */
+    .btn {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* Stile per il form */
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="file"] {
+      width: 100%;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    .form-group .add-field-button {
+      margin-top: 10px;
+    }
+
+      img{width:100%;}
+      img{height: 400px !important;
+    max-height: 100% !important;}
+      /* Stile del menu */
+nav {
+  background-color: #f2f2f2;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu {
+  list-style-type: none;
+  display: flex;
+}
+
+.menu li {
+  margin-right: 20px;
+}
+
+.menu li a {
+  text-decoration: none;
+  color: #333;
+}
+
+.search-button {
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Stile della griglia */
+.grid-container {
+    margin-right: 110px;
+    margin-left: 110px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-gap: 20px;
+  margin-top: 20px;
+}
+
+.grid-item {
+  text-align: center;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+  padding: 10px;
+}
+
+.grid-item img {
+  max-width: 100%;
+}
+
+/* Stile dei bottoni numerici */
+.button-container {
+  margin-top: 20px;
+}
+
+.button-container button {
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+  </style>
+</head>
+<body>
+  <nav>
+    <ul class="menu">
+
+          {% if not benvenuto %}
+      <li><a href="/login">Login</a></li>
+      <li><a href="/registrazione">Registrati</a></li>
+            {% endif %}
+
+
+      <!--<li><a href="#">Admin</a></li>-->
+
+    </ul>
+       {% if benvenuto %}
+        <h1>Benvenuto {{ benvenuto }}</h1>
+    {% endif %}
+    <button class="search-button btn" onclick="openPopupCerca()">Cerca</button>
+   {% if benvenuto %}
+             <button class="search-button btn" onclick="openPopup()">Inserisci segnalazione</button>
+
+    {% endif %}
+
+<!--   <button class="btn" onclick="openPopup()">Apri Popup</button>-->
+
+  </nav>
+
+  <main>
+
+     {% for chiave, lista in documents.items() %}
+            <strong>{{ chiave }}</strong>:
+
+    <div class="grid-container">
+
+
+
+           {% for i in range(0, 8, 4) %}
+               <a href="./viewSegnalazione?id={{ lista[i]._id }}">
+               <div class="grid-item">
+                   <img src="{{ lista[i].image_url }}" alt="Immagine 1">
+                    <p>{{ lista[i].scientific_name }} - {{ lista[i].data_osservazione }}</p>
+               </div>
+               </a>
+                              <a href="./viewSegnalazione?id={{ lista[1+i]._id }}">
+
+               <div class="grid-item">
+                   <img src="{{ lista[1+i].image_url }}" alt="Immagine 1">
+                   <p>{{ lista[1+i].scientific_name }} - {{ lista[1+i].data_osservazione }}</p>
+               </div>
+                              </a>
+                              <a href="./viewSegnalazione?id={{ lista[2+i]._id }}">
+
+               <div class="grid-item">
+                   <img src="{{ lista[2+i].image_url }}" alt="Immagine 1">
+                   <p>{{ lista[2+i].scientific_name }} - {{ lista[2+i].data_osservazione }}</p>
+               </div>
+                              </a>
+                              <a href="./viewSegnalazione?id={{ lista[3+i]._id }}">
+
+               <div class="grid-item">
+                   <img src="{{ lista[3+i].image_url }}" alt="Immagine 1">
+                    <p>{{ lista[3+i].scientific_name }} - {{ lista[3+i].data_osservazione }}</p>
+               </div>
+                              </a>
+           {% endfor %}
+    </div>
+          {% endfor %}
+
+
+
+  </main>
+
+  <div id="popupCercaUsername" class="popup" style="top:10%;">
+          <form id="ricercaFormUsername" action="cercaUsername" method="post">
+               <label for="usernameUtente">Username utente:</label>
+        <input type="text" id="usernameUtente" name="usernameUtente">
+                      <input type="submit" value="Cerca">
+
+          </form>
+  </div>
+
+<div id="popupCerca" class="popup">
+    <h2>Cerca una segnalazione</h2>
+    <form id="ricercaForm" action="cercaSegnalazioni" method="post">
+        <label for="inizioData">Inizio Periodo Data Osservazione:</label>
+        <input type="date" id="inizioData" name="inizioData">
+
+        <label for="fineData">Fine Periodo Data Osservazione:</label>
+        <input type="date" id="fineData" name="fineData">
+
+        <label for="latitudine">Latitudine:</label>
+        <input type="text" id="latitudine" name="latitudine">
+
+        <label for="longitudine">Longitudine:</label>
+        <input type="text" id="longitudine" name="longitudine">
+
+        <label for="nomeScientifico">Nome Scientifico:</label>
+        <input type="text" id="nomeScientifico" name="nomeScientifico">
+
+
+
+
+        <input type="submit" value="Cerca">
+        <button onclick="closePopupCerca()">Chiudi</button>
+
+    </form>
+  </div>
+
+
+<div id="popup" class="popup">
+    <h2>Aggiungi una nuova segnalazione</h2>
+    <form id="speciesForm" action="./insertsegnalazione" method="post"  enctype="multipart/form-data">
+          <div class="form-group">
+
+        <input type="hidden" id="usernameNascosta" name="usernameNascosta">
+      </div>
+      <div class="form-group">
+        <label for="image">Immagine:</label>
+        <input type="file" id="image" name="image">
+      </div>
+          <div class="form-group">
+        <label for="category">Categoria:</label>
+        <select id="category" name="category">
+          <option value="Arachnida">Arachnida</option>
+          <option value="Insecta">Insecta</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="scientificName">Nome scientifico:</label>
+        <input type="text" id="scientificName" name="scientificName">
+      </div>
+      <div class="form-group">
+        <label for="commonName">Nome comune:</label>
+        <input type="text" id="commonName" name="commonName">
+      </div>
+
+
+         <div class="form-group">
+         <label for="fineData">Data Osservazione:</label>
+        <input type="date" id="dataosser" name="dataosser">
+         </div>
+         <div class="form-group">
+        <label for="latitudine">Latitudine:</label>
+        <input type="text" id="latitudine" name="latitudine">
+         </div>
+                 <div class="form-group">
+
+        <label for="longitudine">Longitudine:</label>
+        <input type="text" id="longitudine" name="longitudine">
+                 </div>
+
+
+
+      <div id="customFieldsContainer">
+        <!-- Qui vengono aggiunte le coppie chiave-valore personalizzate -->
+      </div>
+      <button class="add-field-button" type="button" onclick="addCustomField()">Aggiungi nuovo campo</button>
+      <button type="submit">Salva</button>
+      <button onclick="closePopup()">Chiudi</button>
+    </form>
+  </div>
+
+
+     <script>
+         var count=0;
+var username= document.getElementsByTagName("nav")[0].getElementsByTagName("h1")[0].textContent.replace("Benvenuto ","")
+document.getElementById("usernameNascosta").value = username
+           function openPopupCerca() {
+      var popup = document.getElementById("popupCerca");
+      popup.style.display = "block";
+         var popup = document.getElementById("popupCercaUsername");
+      popup.style.display = "block";
+    }
+
+    function closePopupCerca() {
+      var popup = document.getElementById("popupCerca");
+      popup.style.display = "none";
+            var popup = document.getElementById("popupCercaUsername");
+      popup.style.display = "none";
+    }
+    function openPopup() {
+      var popup = document.getElementById("popup");
+      popup.style.display = "block";
+    }
+
+    function closePopup() {
+      var popup = document.getElementById("popup");
+      popup.style.display = "none";
+    }
+
+    function addCustomField() {
+      var customFieldsContainer = document.getElementById("customFieldsContainer");
+
+      var newField = document.createElement("div");
+      newField.classList.add("form-group");
+
+      var newLabel = document.createElement("label");
+      newLabel.textContent = "Campo:";
+      var newInput = document.createElement("input");
+      newInput.type = "text";
+      newInput.placeholder = "nomeCampo:valoreCampo"
+      newInput.name = "customFieldKey"+count;
+      count+=1;
+
+      var removeButton = document.createElement("button");
+      removeButton.textContent = "Rimuovi";
+      removeButton.type = "button";
+      removeButton.onclick = function () {
+        customFieldsContainer.removeChild(newField);
+      };
+
+      newField.appendChild(newLabel);
+      newField.appendChild(newInput);
+      newField.appendChild(removeButton);
+
+      customFieldsContainer.appendChild(newField);
+    }
+  </script>
+
+</body>
+</html>

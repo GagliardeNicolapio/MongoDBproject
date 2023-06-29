@@ -23,13 +23,47 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/insertsegnalazione', methods=['post'])
 def insert_segnalazione():
+    client = MongoClient("mongodb://localhost:27017/")
+    db_name = "mongoDBproject"
+    db = client[db_name]
     print("insertsegn")
     file = request.files['image']
 
     # Salva il file nell'apposita cartella
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
     image_url = f"{request.host_url}{UPLOAD_FOLDER}/{file.filename}"
-    return render_template('index.html', documents=getRandomDocuments())
+
+    categoria = request.form.get('category')
+    nome_scientifico = request.form.get('scientificName')
+    nome_comune = request.form.get('commonName')
+
+    # Creare un oggetto JSON con i campi principali
+
+    osservazione = {
+        'image_url': image_url,
+        'scientific_name': nome_scientifico,
+        'nome_comune': nome_comune,
+        'data_osservazione':  datetime.strptime(request.form.get("dataosser"), "%Y-%m-%d"),
+        'latitudine': float(request.form.get("latitudine")),
+        'longitudine':float( request.form.get("longitudine")),
+
+    }
+
+    # Iterare sui parametri aggiuntivi e aggiungerli come proprietà dell'oggetto JSON
+    for chiave, valore in request.form.items():
+        if chiave not in ['image', 'category', 'scientificName', 'commonName', 'usernameNascosta','dataosser','latitudine','longitudine']:
+            valori = valore.split(":")
+            osservazione[valori[0]] = valori[1]
+
+    id_utente= db["utenti"].find_one({"username":request.form["usernameNascosta"]})["_id"]
+    osservazione["id_utente"]=ObjectId(id_utente)
+    print(categoria)
+    print(request.form["usernameNascosta"])
+    db.get_collection(categoria).insert_one(osservazione)
+
+    print(osservazione)
+
+    return render_template('index.html', documents=getRandomDocuments(), benvenuto=request.form["usernameNascosta"])
 
 
 @app.route('/insertuser', methods=['POST'])
@@ -136,25 +170,21 @@ def crea_db():
                     "validator": {
                         "$jsonSchema": {
                             "bsonType": "object",
-                            "required": ["id_utente","data_osservazione", "image_url", "latitudine", "longitudine"],
+                            "required": ["id_utente", "data_osservazione", "image_url", "latitudine", "longitudine"],
                             # Campi obbligatori
                             "properties": {
-                                "id_utente":{
+                                "id_utente": {
                                     "bsonType": "objectId"
                                 },
                                 "data_osservazione": {
-                                    "bsonType": "string",  # Tipo di dato per campo1
+                                    "bsonType": "date",  # Tipo di dato per campo1
                                     "pattern": "^\d{2}/\d{2}/\d{4}$"
                                 },
                                 "image_url": {
                                     "bsonType": "string",
                                     "pattern": "^(https?|ftp)://[^\s/$.?#].[^\s]*$"
                                 },
-                                "id_citta": {
-                                    "bsonType": "objectId",
-                                    "pattern": "^[0-9a-fA-F]{24}$"
-                                    # Pattern per validare un ObjectId a 24 caratteri esadecimali
-                                },
+
                                 "latitudine": {
                                     "bsonType": "double"
                                 },
@@ -170,15 +200,17 @@ def crea_db():
             # se l'utente non è presente lo inserisco
             # if db.get_collection("utenti").find_one({"username": obj["user_name"]}) is None:
             try:
-                inserted_id= db.get_collection("utenti").insert_one({"username": obj["user_name"], "password": "utente"}).inserted_id
+                inserted_id = db.get_collection("utenti").insert_one(
+                    {"username": obj["user_name"], "password": "utente"}).inserted_id
                 print(inserted_id)
                 print(inserted_id["_id"])
             except:
-                inserted_id = db.get_collection("utenti").find_one({"username":  obj["user_name"]})
+                inserted_id = db.get_collection("utenti").find_one({"username": obj["user_name"]})
                 print(obj["user_name"] + " già presente")
                 print(inserted_id)
                 print(inserted_id["_id"])
-            osservazione = {"id_utente":inserted_id["_id"],"data_osservazione": datetime.strptime(obj['observed_on'], "%Y-%m-%d").strftime("%d/%m/%Y"),
+            osservazione = {"id_utente": inserted_id["_id"],
+                            "data_osservazione": datetime.strptime(obj['observed_on'], "%Y-%m-%d"),
                             "image_url": obj['image_url'], "latitudine": float(obj["latitude"]),
                             "longitudine": float(obj["longitude"]),
                             "scientific_name": obj["scientific_name"]}
@@ -838,27 +870,29 @@ def visualizza_documento():
     for collezione in getCollections(db):
         try:
 
-             documento = db.get_collection(collezione).aggregate([
-                 {
-                     '$match': {
-                         '_id': ObjectId(documento_id)
-                     }
-                 },
-                 {
-                     '$lookup': {
-                         'from': 'utenti',
-                         'localField': 'id_utente',
-                         'foreignField': '_id',
-                         'as': 'utente'
-                     }
-                 },
-                 {
-                     '$project': {
-                         '_id': 0,
-                         'utente.password':0,
-                         'utente._id': 0
-                     }
-                 }
+            documento = db.get_collection(collezione).aggregate([
+                {
+                    '$match': {
+                        '_id': ObjectId(documento_id)
+                    }
+                },
+                {
+                    '$lookup': {
+                        'from': 'utenti',
+                        'localField': 'id_utente',
+                        'foreignField': '_id',
+                        'as': 'utente'
+                    }
+                },
+                {
+                    '$project': {
+                        '_id': 0,
+                        'utente.password': 0,
+                        'utente._id': 0,
+
+                        'id_utente': 0
+                    }
+                }
             ]).next()
 
         except StopIteration:
@@ -975,17 +1009,21 @@ def inserisci_utente():
 
     return render_template("index.html", documents=getRandomDocuments(), benvenuto=username)
 
+
 @app.route('/cercaSegnalazioni', methods=['POST'])
 def cercaSegnalazioni():
     # Funzione per creare una query MongoDB in base ai parametri
-    def build_query(inizio_data, fine_data, latitudine, longitudine, nome_scientifico, altre_caratt, username_utente):
+    def build_query(inizio_data, fine_data, latitudine, longitudine, nome_scientifico):
         query = {}
 
-        if inizio_data:
-            query['inizioData'] = {'$gte': inizio_data}
+        if inizio_data and fine_data:
+            query['data_osservazione'] = {'$gte': datetime.strptime(inizio_data, '%Y-%m-%d'),
+                                          '$lte': datetime.strptime(fine_data, '%Y-%m-%d')}
+        elif inizio_data and not fine_data:
+            query['data_osservazione'] = {'$gte': inizio_data}
 
-        if fine_data:
-            query['fineData'] = {'$lte': fine_data}
+        elif fine_data and not inizio_data:
+            query['data_osservazione'] = {'$lte': fine_data}
 
         if latitudine:
             lat = float(latitudine)
@@ -996,14 +1034,7 @@ def cercaSegnalazioni():
             query['longitudine'] = {'$gte': lon - 10, '$lte': lon + 10}
 
         if nome_scientifico:
-            query['nomeScientifico'] = {'$regex': re.compile(re.escape(nome_scientifico), re.IGNORECASE)}
-
-        if altre_caratt:
-            altre_caratteristiche = altre_caratt.split(',')
-            query['$text'] = {'$search': altre_caratteristiche}
-
-        if username_utente:
-            query['utente.username'] = username_utente
+            query['scientific_name'] = {'$regex': re.compile(re.escape(nome_scientifico), re.IGNORECASE)}
 
         return query
 
@@ -1014,25 +1045,84 @@ def cercaSegnalazioni():
 
         rst = {}
         for collection in getCollections(database):
-            rst[collection] = list(database[collection].find(query))
+            rst[collection] = list(database[collection].find(query, {'_id': 0, 'id_utente': 0}))
 
         return rst
-
 
     inizio_data = request.form.get('inizioData')
     fine_data = request.form.get('fineData')
     latitudine = request.form.get('latitudine')
     longitudine = request.form.get('longitudine')
     nome_scientifico = request.form.get('nomeScientifico')
-    altre_caratt = request.form.get('altreCaratt')
+
     username_utente = request.form.get('usernameUtente')
 
-    query = build_query(inizio_data, fine_data, latitudine, longitudine, nome_scientifico, altre_caratt,
-                        username_utente)
+    query = build_query(inizio_data, fine_data, latitudine, longitudine, nome_scientifico)
     print(query)
     result = execute_query(query)
     print(result)
-    return result
+    return render_template("segnalazioniTrovate.html", data=result, query=query)
+
+
+@app.route('/cercaUsername', methods=['POST'])
+def cercaUsername():
+    client = MongoClient("mongodb://localhost:27017/")
+    db = client['mongoDBproject']
+
+    # Crea la pipeline di aggregazione
+    pipeline = [
+        {
+            "$lookup": {
+                "from": "utenti",
+                "localField": "id_utente",
+                "foreignField": "_id",
+                "as": "utente"
+            }
+        },
+        {
+            "$match": {
+                "utente.username": request.form["usernameUtente"]
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "id_utente":0,
+                "utente.password":0,
+                "utente._id":0
+            }
+        }
+    ]
+    print(pipeline)
+    # Esegui la query di aggregazione
+    risultati={}
+    for collection in getCollections(db):
+        risultati[collection] = list(db.get_collection(collection).aggregate(pipeline))
+    print(risultati)
+
+    return render_template("segnalazioniTrovateUsername.html", data=risultati, query=pipeline)
+
+@app.route('/login')
+def login():
+    return render_template("login.html")
+
+
+@app.route('/checklogin', methods=['POST'])
+def checklogin():
+    client = MongoClient("mongodb://localhost:27017/")
+    db_name = "mongoDBproject"
+    db = client[db_name]
+
+    username = request.form['username']
+    password = request.form['password']
+
+    # Query MongoDB to find the user
+    user = db["utenti"].find_one({'username': username, 'password': password})
+
+    if user:
+        return render_template('index.html', documents=getRandomDocuments(), benvenuto=username)
+    else:
+        return render_template('login.html', login=False)
 
 
 if __name__ == '__main__':

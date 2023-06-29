@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pagina con immagine e elenco</title>
+    <style>
+        .container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f2f2f2;
+        }
+
+        .box {
+            display: flex;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .image {
+            width: 200px;
+            height: 200px;
+            background-image: url('{{ documento.image_url }}');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .list {
+            padding: 20px;
+        }
+
+        .list ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .list li {
+            margin-bottom: 10px;
+        }
+
+        .list li strong {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="box">
+            <div class="image"></div>
+            <div class="list">
+                <ul>
+                    {% for campo, valore in documento.items() %}
+            {% if campo == 'citta' %}
+                <li><strong>{{ campo }}:</strong></li>
+                <ul>
+                    {% for city in valore %}
+                        {% for city_campo, city_valore in city.items() %}
+                            <li>{{ city_campo }}: {{ city_valore }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <li><strong>{{ campo }}:</strong> {{ valore }}</li>
+            {% endif %}
+        {% endfor %}
+
+
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

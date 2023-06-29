@@ -1,0 +1,24 @@
+var animals =  document.getElementsByClassName("entriesContainer picTrans boxShadow")
+
+for(i=0; i<=animals.length; i++){
+     console.log(i)
+    fetch(animals[i].getElementsByTagName('a')[0].href)
+        .then((response)=>response.text())
+        .then((html)=>{
+            var el = document.createElement('html')
+            el.innerHTML = html 
+            var row = '{"common-name":"'+el.getElementsByClassName("textBold textDkGray")[0].firstChild.textContent +"\","
+            //row += '"'+el.getElementsByClassName("textItalics")[0].innerText.replace("(","").replace(")","")+"\","
+          
+            var info = el.getElementsByClassName("leftRightContainers boxShadow")[1].getElementsByClassName("containerRows textLarge picTrans")
+            for(j=0; j<info.length-1; j++){
+                row +=  '"'+info[j].innerText.substring(0,info[j].innerText.indexOf(":")).replace((/  |\r\n|\n|\r/gm),"")+'":'
+                    row += '"'+info[j].innerText.substring(info[j].innerText.indexOf(":")+1,info[j].innerText.length).replace((/  |\r\n|\n|\r/gm),"").replace("	","")+"\","
+                
+            }
+
+            row +=  '"'+info[j].innerText.substring(0,info[j].innerText.indexOf(":")).replace((/  |\r\n|\n|\r/gm),"")+'":'
+                    row += '"'+info[j].innerText.substring(info[j].innerText.indexOf(":")+1,info[j].innerText.length).replace((/  |\r\n|\n|\r/gm),"").replace("	","")+"\"}"
+             console.log(row)
+        })
+} 
