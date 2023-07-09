@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Segnalazioni trovate</title>
+    <title>mongoDBproject</title>
     <style>
     .tile {
         display: inline-block;
@@ -31,7 +31,9 @@
                                 <div class="tile" style="background-image: url({{ item.image_url }});">
     </div><br>
                         {% for key, value in item.items() %}
+                            {% if key != 'image_url' %}
                             <b>{{ key }}</b>: {{ value }}<br>
+                            {% endif %}
                         {% endfor %}
 
 

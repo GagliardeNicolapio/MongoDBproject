@@ -18,6 +18,7 @@
     .tile h2 {
         margin-top: 0;
     }
+    img{width:15%;}
 </style>
 </head>
 <body>
@@ -31,7 +32,12 @@
             {% for oggetto in array %}
                 <li>
                     {% for chiave, valore in oggetto.items() %}
+                        {% if chiave == 'image_url' %}
+                            <img src="{{ valore }}"><br>
+                        {% endif %}
+                        {% if chiave != 'image_url' %}
                         <strong>{{ chiave }}:</strong> {{ valore }}<br>
+                        {% endif %}
                     {% endfor %}
                 </li>
             {% endfor %}

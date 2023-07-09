@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Pagina con immagine e elenco</title>
+    <title>mongoDBproject</title>
     <style>
         .container {
             display: flex;
@@ -50,19 +50,23 @@
             <div class="list">
                 <ul>
                     {% for campo, valore in documento.items() %}
-            {% if campo == 'citta' %}
-                <li><strong>{{ campo }}:</strong></li>
-                <ul>
-                    {% for city in valore %}
-                        {% for city_campo, city_valore in city.items() %}
-                            <li>{{ city_campo }}: {{ city_valore }}</li>
-                        {% endfor %}
+                        {% if campo != 'image_url' %}
+
+                        {% if campo == 'citta' %}
+                            <li><strong>{{ campo }}:</strong></li>
+                            <ul>
+                                {% for city in valore %}
+                                    {% for city_campo, city_valore in city.items() %}
+                                        <li>{{ city_campo }}: {{ city_valore }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <li><strong>{{ campo }}:</strong> {{ valore }}</li>
+                        {% endif %}
+                        {% endif %}
+
                     {% endfor %}
-                </ul>
-            {% else %}
-                <li><strong>{{ campo }}:</strong> {{ valore }}</li>
-            {% endif %}
-        {% endfor %}
 
 
                 </ul>
