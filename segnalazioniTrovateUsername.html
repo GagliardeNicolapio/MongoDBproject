@@ -1,0 +1,49 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Segnalazioni trovate</title>
+    <style>
+    .tile {
+        display: inline-block;
+        width: 200px;
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+        margin: 10px;
+        padding: 10px;
+        color: white;
+    }
+
+    .tile h2 {
+        margin-top: 0;
+    }
+    img{width:15%;}
+</style>
+</head>
+<body>
+    <h1>Segnalazioni trovate per username</h1>
+    <h6>Query eseguita:{{ query }}</h6>
+
+        <ul>
+       {% for array in data.values() %}
+        <h2>{{ array_name }}</h2>
+        <ul>
+            {% for oggetto in array %}
+                <li>
+                    {% for chiave, valore in oggetto.items() %}
+                        {% if chiave == 'image_url' %}
+                            <img src="{{ valore }}"><br>
+                        {% endif %}
+                        {% if chiave != 'image_url' %}
+                        <strong>{{ chiave }}:</strong> {{ valore }}<br>
+                        {% endif %}
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+    </ul>
+
+</body>
+</html>

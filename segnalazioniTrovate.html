@@ -1,0 +1,44 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>mongoDBproject</title>
+    <style>
+    .tile {
+        display: inline-block;
+        width: 200px;
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+        margin: 10px;
+        padding: 10px;
+        color: white;
+    }
+
+    .tile h2 {
+        margin-top: 0;
+    }
+</style>
+</head>
+<body>
+    <h1>Segnalazioni trovate</h1>
+    <h6>Query eseguita:{{ query }}</h6>
+    {% for key, items in data.items() %}
+        <h2>{{ key }}</h2>
+
+                {% for item in items %}
+
+                                <div class="tile" style="background-image: url({{ item.image_url }});">
+    </div><br>
+                        {% for key, value in item.items() %}
+                            {% if key != 'image_url' %}
+                            <b>{{ key }}</b>: {{ value }}<br>
+                            {% endif %}
+                        {% endfor %}
+
+
+                {% endfor %}
+
+    {% endfor %}
+</body>
+</html>

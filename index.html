@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Interfaccia Responsive</title>
+  <title>mongoDBproject</title>
   <link rel="stylesheet" type="text/css" href="style.css">
   <style>
 
@@ -160,16 +160,20 @@ nav {
   </style>
 </head>
 <body>
+{% if cancellato == True %}
+    <script>alert("Segnalazione cancellata con successo")</script>
+{% endif %}
+{% if modificato == True %}
+    <script>alert("Segnalazione modificata con successo")</script>
+{% endif %}
   <nav>
     <ul class="menu">
+
           {% if not benvenuto %}
-      <li><a href="#">Login</a></li>
+      <li><a href="/login">Login</a></li>
       <li><a href="/registrazione">Registrati</a></li>
             {% endif %}
-       {% if benvenuto %}
 
-      <li><a href="#">Inserisci osservazione</a></li>
-    {% endif %}
 
       <!--<li><a href="#">Admin</a></li>-->
 
@@ -178,7 +182,10 @@ nav {
         <h1>Benvenuto {{ benvenuto }}</h1>
     {% endif %}
     <button class="search-button btn" onclick="openPopupCerca()">Cerca</button>
-      <button class="search-button btn" onclick="openPopup()">Inserisci segnalazione</button>
+   {% if benvenuto %}
+             <button class="search-button btn" onclick="openPopup()">Inserisci segnalazione</button>
+
+    {% endif %}
 
 <!--   <button class="btn" onclick="openPopup()">Apri Popup</button>-->
 
@@ -229,6 +236,15 @@ nav {
 
   </main>
 
+  <div id="popupCercaUsername" class="popup" style="top:10%;">
+          <form id="ricercaFormUsername" action="cercaUsername" method="post">
+               <label for="usernameUtente">Username utente:</label>
+        <input type="text" id="usernameUtente" name="usernameUtente">
+                      <input type="submit" value="Cerca">
+
+          </form>
+  </div>
+
 <div id="popupCerca" class="popup">
     <h2>Cerca una segnalazione</h2>
     <form id="ricercaForm" action="cercaSegnalazioni" method="post">
@@ -239,19 +255,16 @@ nav {
         <input type="date" id="fineData" name="fineData">
 
         <label for="latitudine">Latitudine:</label>
-        <input type="number" id="latitudine" name="latitudine">
+        <input type="text" id="latitudine" name="latitudine">
 
         <label for="longitudine">Longitudine:</label>
-        <input type="number" id="longitudine" name="longitudine">
+        <input type="text" id="longitudine" name="longitudine">
 
         <label for="nomeScientifico">Nome Scientifico:</label>
         <input type="text" id="nomeScientifico" name="nomeScientifico">
 
-        <label for="altreCaratt">Altre caratteristiche:</label>
-        <input type="text" id="altreCaratt" name="altreCaratt" placeholder="flying, harmful, spots, orange...">
 
-        <label for="usernameUtente">Username utente:</label>
-        <input type="text" id="usernameUtente" name="usernameUtente">
+
 
         <input type="submit" value="Cerca">
         <button onclick="closePopupCerca()">Chiudi</button>
@@ -263,6 +276,10 @@ nav {
 <div id="popup" class="popup">
     <h2>Aggiungi una nuova segnalazione</h2>
     <form id="speciesForm" action="./insertsegnalazione" method="post"  enctype="multipart/form-data">
+          <div class="form-group">
+
+        <input type="hidden" id="usernameNascosta" name="usernameNascosta">
+      </div>
       <div class="form-group">
         <label for="image">Immagine:</label>
         <input type="file" id="image" name="image">
@@ -282,6 +299,24 @@ nav {
         <label for="commonName">Nome comune:</label>
         <input type="text" id="commonName" name="commonName">
       </div>
+
+
+         <div class="form-group">
+         <label for="fineData">Data Osservazione:</label>
+        <input type="date" id="dataosser" name="dataosser">
+         </div>
+         <div class="form-group">
+        <label for="latitudine">Latitudine:</label>
+        <input type="text" id="latitudine" name="latitudine">
+         </div>
+                 <div class="form-group">
+
+        <label for="longitudine">Longitudine:</label>
+        <input type="text" id="longitudine" name="longitudine">
+                 </div>
+
+
+
       <div id="customFieldsContainer">
         <!-- Qui vengono aggiunte le coppie chiave-valore personalizzate -->
       </div>
@@ -293,14 +328,20 @@ nav {
 
 
      <script>
-
+         var count=0;
+var username= document.getElementsByTagName("nav")[0].getElementsByTagName("h1")[0].textContent.replace("Benvenuto ","")
+document.getElementById("usernameNascosta").value = username
            function openPopupCerca() {
       var popup = document.getElementById("popupCerca");
+      popup.style.display = "block";
+         var popup = document.getElementById("popupCercaUsername");
       popup.style.display = "block";
     }
 
     function closePopupCerca() {
       var popup = document.getElementById("popupCerca");
+      popup.style.display = "none";
+            var popup = document.getElementById("popupCercaUsername");
       popup.style.display = "none";
     }
     function openPopup() {
@@ -324,7 +365,8 @@ nav {
       var newInput = document.createElement("input");
       newInput.type = "text";
       newInput.placeholder = "nomeCampo:valoreCampo"
-      newInput.name = "customFieldKey[]";
+      newInput.name = "customFieldKey"+count;
+      count+=1;
 
       var removeButton = document.createElement("button");
       removeButton.textContent = "Rimuovi";
@@ -338,6 +380,17 @@ nav {
       newField.appendChild(removeButton);
 
       customFieldsContainer.appendChild(newField);
+    }
+
+    if(document.getElementsByTagName('h1')[0].textContent == "Benvenuto admin"){
+        grid = document.getElementsByClassName('grid-container')[0].getElementsByTagName('a')
+        for(var i=0; i<=grid.length; i++){
+            grid[i].href = grid[i].href+"&admin=true"
+        }
+  grid = document.getElementsByClassName('grid-container')[1].getElementsByTagName('a')
+        for(var i=0; i<=grid.length; i++){
+            grid[i].href = grid[i].href+"&admin=true"
+        }
     }
   </script>
 

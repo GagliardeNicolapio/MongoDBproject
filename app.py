@@ -886,7 +886,7 @@ def visualizza_documento():
                 },
                 {
                     '$project': {
-                        '_id': 0,
+
                         'utente.password': 0,
                         'utente._id': 0,
 
@@ -901,8 +901,9 @@ def visualizza_documento():
         # Cerca il documento corrispondente nell'archivio dei dati
         # documento = db.get_collection(collezione).find_one({"_id": ObjectId(documento_id)})
         print(documento)
+       # print()
         if documento is not None:
-            return render_template("segnalazione.html", documento=documento)
+            return render_template("segnalazione.html", documento=documento, admin= True if request.args.get("admin")=='true' else False)
 
     return render_template("errore.html", messaggio="nessun doc con id:" + documento_id)
     # Passa il documento alla pagina HTML come contesto
@@ -1123,6 +1124,55 @@ def checklogin():
         return render_template('index.html', documents=getRandomDocuments(), benvenuto=username)
     else:
         return render_template('login.html', login=False)
+
+
+@app.route('/cancella', methods=['GET'])
+def elimina_documento():
+    id_documento = request.args.get('id')
+    print(id_documento)
+    client = MongoClient("mongodb://localhost:27017/")
+    db_name = "mongoDBproject"
+    db = client[db_name]
+    if id_documento:
+        for collection in getCollections(db):
+            result = db[collection].delete_one({'_id': ObjectId(id_documento)})
+            if result.deleted_count == 1:
+                return render_template('index.html', documents=getRandomDocuments(), benvenuto="admin", cancellato=True)
+
+    else:
+        return 'ID documento mancante'
+
+@app.route('/modifica', methods=['GET'])
+def get_document():
+        client = MongoClient("mongodb://localhost:27017/")
+        db_name = "mongoDBproject"
+        db = client[db_name]
+        document_id = request.args.get('id')
+        for collezione in getCollections(db):
+            document = db[collezione].find_one({'_id': ObjectId(document_id)})
+            if document:
+                return render_template('modifica.html', document=document)
+
+        return render_template('index.html')
+
+@app.route('/modificaDoc', methods=['POST'])
+def update_document():
+    client = MongoClient("mongodb://localhost:27017/")
+    db_name = "mongoDBproject"
+    db = client[db_name]
+
+    document_id = request.form['_id']
+    document_fields = request.form.to_dict()
+    print(document_fields)
+    document_fields.pop('_id')  # Rimuovi l'ID dal dizionario dei campi
+    document_fields.pop('id_utente')
+    document_fields['data_osservazione'] = datetime.strptime(document_fields['data_osservazione'], "%Y-%m-%d %H:%M:%S")
+    document_fields['latitudine'] = float(document_fields['latitudine'])
+    document_fields['longitudine'] = float(document_fields['longitudine'])
+
+    for collection in getCollections(db):
+        db[collection].update_one({'_id': ObjectId(document_id)}, {'$set': document_fields})
+    return render_template('index.html', documents=getRandomDocuments(), benvenuto="admin", modificato=True)
 
 
 if __name__ == '__main__':
