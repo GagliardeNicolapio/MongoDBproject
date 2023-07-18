@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dettaglio Documento</title>
+</head>
+<body>
+    <h1>Dettaglio Documento</h1>
+    <form action="modificaDoc" method="post">
+        {% for key, value in document.items() %}
+            {% if key == 'image_url' %}
+                <img src="{{ value }}"><br>
+            {% elif key!="_id" and key!="id_utente" %}
+            <label for="{{ key }}">{{ key }}:</label>
+            <input type="text" name="{{ key }}" value="{{ value }}"><br>
+            {% else %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}"><br>
+
+            {% endif %}
+        {% endfor %}
+    <button type="submit">Invia</button>
+    </form>
+</body>
+</html>

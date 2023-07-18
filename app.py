@@ -51,7 +51,8 @@ def insert_segnalazione():
 
     # Iterare sui parametri aggiuntivi e aggiungerli come proprietà dell'oggetto JSON
     for chiave, valore in request.form.items():
-        if chiave not in ['image', 'category', 'scientificName', 'commonName', 'usernameNascosta','dataosser','latitudine','longitudine']:
+        if chiave not in ['image', 'category', 'scientificName', 'commonName',
+                          'usernameNascosta','dataosser','latitudine','longitudine']:
             valori = valore.split(":")
             osservazione[valori[0]] = valori[1]
 

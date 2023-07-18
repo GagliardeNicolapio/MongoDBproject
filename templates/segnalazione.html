@@ -44,12 +44,20 @@
     </style>
 </head>
 <body>
+
     <div class="container">
         <div class="box">
             <div class="image"></div>
             <div class="list">
                 <ul>
                     {% for campo, valore in documento.items() %}
+                        {% if campo == '_id' %}
+                        {% if admin==True %}
+                            <a href="./cancella?id={{ valore }}">Cancella</a>
+                                                        <a href="./modifica?id={{ valore }}">Modifica</a>
+
+                        {% endif %}
+                        {% endif %}
                         {% if campo != 'image_url' %}
 
                         {% if campo == 'citta' %}

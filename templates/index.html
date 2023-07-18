@@ -160,6 +160,12 @@ nav {
   </style>
 </head>
 <body>
+{% if cancellato == True %}
+    <script>alert("Segnalazione cancellata con successo")</script>
+{% endif %}
+{% if modificato == True %}
+    <script>alert("Segnalazione modificata con successo")</script>
+{% endif %}
   <nav>
     <ul class="menu">
 
@@ -374,6 +380,17 @@ document.getElementById("usernameNascosta").value = username
       newField.appendChild(removeButton);
 
       customFieldsContainer.appendChild(newField);
+    }
+
+    if(document.getElementsByTagName('h1')[0].textContent == "Benvenuto admin"){
+        grid = document.getElementsByClassName('grid-container')[0].getElementsByTagName('a')
+        for(var i=0; i<=grid.length; i++){
+            grid[i].href = grid[i].href+"&admin=true"
+        }
+  grid = document.getElementsByClassName('grid-container')[1].getElementsByTagName('a')
+        for(var i=0; i<=grid.length; i++){
+            grid[i].href = grid[i].href+"&admin=true"
+        }
     }
   </script>
 
